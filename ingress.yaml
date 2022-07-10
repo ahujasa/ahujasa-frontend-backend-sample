@@ -1,0 +1,32 @@
+#ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-website
+  annotations:
+    kubernetes.io/ingress.class: addon-http-application-routing
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  defaultBackend:
+    service:
+      name: client-app
+      port:
+        name: http-client
+  rules:
+    - host: hello.c054786f87e443ccbed7.southindia.aksapp.io # Which host is allowed to enter the cluster
+      http:
+        paths:
+          - backend: # How the ingress will handle the requests
+              service:
+               name: client-app # Which service the request will be forwarded to
+               port:
+                 name: http-client # Which port in that service
+            path: / # Which path is this rule referring to
+            pathType: Prefix # See more at https://kubernetes.io/docs/concepts/services-networking/ingress/#path-types
+          - backend: # How the ingress will handle the requests
+              service:
+               name: api-app # Which service the request will be forwarded to
+               port:
+                 name: http-api # Which port in that service
+            path: /api(/|$)(.*) # Which path is this rule referring to
+            pathType: Prefix # See more at https://kubernetes.io/docs/concepts/services-networking/ingress/#path-types

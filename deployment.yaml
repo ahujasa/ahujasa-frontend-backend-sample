@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-app
+  template:
+    metadata:
+      labels:
+        app: api-app
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: api-app
+        image: sauraahu/api:latest
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-app
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5 
+  template:
+    metadata:
+      labels:
+        app: client-app
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: client-app
+        image: sauraahu/client:latest
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m

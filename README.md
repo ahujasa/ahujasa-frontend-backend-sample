@@ -23,41 +23,173 @@ In the sys-stats directory, do the following.
 ## Task 1 - Dockerize the Application
 
 1. api/Dockerfile-
-   - This create Docker container by installing requirements.txt and then running app.py while exposing on port 8000. :8000/stats reference is expected to resolve to flask app. We call it "server" in docker-compose.yml file
+   - This create Docker container by installing requirements.txt and then running app.py while exposing on port 8000. `:8000/stats` reference is expected to resolve to flask app. We call it `api` in docker-compose.yml file
 2. sys-stats/Dockerfile-
   - This create Docker container by installing npm dependencies, then `npm run build` on each run. Finally exposes frontend 
-    on port 3000 thru `npm run start`. We call it "client" in docker-compose.yml file later.
+    on port 3000 thru `npm run start`. We call it `client` in docker-compose.yml file later.
 3. nginx/Dockerfile-
-   - This create Docker container to reverse proxy client & server over port 9000. Default 9000 in client configuration of default.nginx points to "server" over port 3000. "/api" in default.nginx points to "client" over port 8000.
-   So,in nutshell, when we run `docker-compose up --build` command, then it brings up react application over port http://localhost:9000 and http://localhost:9000/stats/api resolves to client flask application. 
+   - This create Docker container to reverse proxy client & server over port `80`. `Default 80` in client configuration of default.nginx points to `server` over port 3000. `/api` in default.nginx points to `client` over port 8000.
+   So,in nutshell, when we run `docker-compose up --build` command, then it brings up react application over port `http://localhost` and `http://localhost/api/stats` resolves to client flask application. Browse below to validate in browser-
+   ```
+      `http://localhost` 
+      `http://localhost/api/stats`
+   ```
 
+4. Stop `docker-compose up --build` command to free up port 80.
 
 ## Task 2 - Deploy on Cloud
 
-Next step is to deploy this application to absolutely any cloud of your choice. 
+1. create account in azure cloud `https://azure.microsoft.com/en-in/get-started/azure-portal/`
+2. Install Azure cli from `https://docs.microsoft.com/en-us/cli/azure/install-azure-cli`
+3. Login to Azure cloud
+```
+az login
+```
+4. Export variables in bash profile
+```
+export RESOURCE_GROUP=rg-hello-world
+export CLUSTER_NAME=aks-hello-world
+export LOCATION=southindia
+```
+5. Create resource group  , a placeholder for all resources
+```
+az group create --name=$RESOURCE_GROUP --location=$LOCATION
+```
 
-> It's important to remember here that the application is already containerize, maybe you could deploy it to services which take an advantage of that fact. (example, AWS EBS?)
+6. Create AKS cluster
+```
+az aks create \
+    --resource-group $RESOURCE_GROUP \
+    --name $CLUSTER_NAME \
+    --node-count 2 \
+    --enable-addons http_application_routing \
+    --generate-ssh-keys \
+    --node-vm-size Standard_B2s \
+    --network-plugin azure
+   ```
+7.  Download and install `kubectl` from `https://kubernetes.io/docs/tasks/tools/` and set alias in k for kubectl in bash profile
+Check minikube nodes are ready  
 
-You could use any other cloud service provider of your choice too. Use the smallest instance size available to save up on the cloud costs. 
+8.link kubectl to use AKS cluster
+```
+az aks get-credentials --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP
+```
 
-The React App should be accessible on a public URL, that's the only hard requirement. 
+```
+k get nodes
+```
 
-Use the best practices for exposing the cloud VM to the internet, block access to unused ports, add a static IP (elastic IP for AWS), create proper IAM users and configure the app exactly how you would in production. Write a small document to explain your approach.
+9. Apply deployment.yaml to deploy api and client pods and run its deployments resources in k8s.
+```
+k apply -f deployment.yaml
+k get deployments
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+api-app           1/1     1            1           72m
+client-app        1/1     1            1           72m
+```
+10. Apply service.yaml to expose api and client services over port 80
 
-You will be evaluated based on the
+```
+k apply -f service.yaml
+k get service
+NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+api-app      ClusterIP   10.0.241.248   <none>        80/TCP    22m
+client-app   ClusterIP   10.0.73.197    <none>        80/TCP    22m
+```
+11. Apply ingress.yaml file
 
-* best practices
-* quality of the documentation provided with the code
+```
+k apply -f minikube_ingress.yaml
+k get ingress
+NAME            CLASS    HOSTS                                             ADDRESS       PORTS   AGE
+hello-website   <none>   hello.c054786f87e443ccbed7.southindia.aksapp.io   13.71.97.67   80      12m
+```
+Browse `13.71.97.67` in browser to see ui is loading.
+Browse  `hello.c054786f87e443ccbed7.southindia.aksapp.io/api/stats` in browser to see rest api backned service is also loading. 
+```
+{"cpu":4.3,"ram":29.9}
+```
 
-### Task 3 - Get it to work with Kubernetes
+### Task 3 - Get it to work with local minikube Kubernetes
 
-Next step is completely separate from step 2. Go back to the application you built in Stage 1 and get it to work with Kubernetes.
+1. Download and Install `minikube` from `https://minikube.sigs.k8s.io/docs/start/`  
+2. Start minikube
+```
+minikube start
+```
+3. Download and install `kubectl` from `https://kubernetes.io/docs/tasks/tools/` and set alias in k for kubectl in bash profile
+Check minikube nodes are ready  
 
-Separate out the two containers into separate pods, communicate between the two containers, add a load balancer (or equivalent), expose the final App over port 80 to the final user (and any other tertiary tasks you might need to do)
+```
+k get nodes
+```
 
-Add all the deployments, services and volume (if any) yaml files in the repo.
+4. Apply deployment.yaml to deploy api and client pods and run its deployments resources in k8s.
+```
+k apply -f deployment.yaml
+k get deployments
+NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+api-app      1/1     1            1           131m
+client-app   1/1     1            1           131m
+```
+5. Apply minikube_service.yaml to expose api and client services over port 80
 
-The only hard-requirement is to get the app to work with `minikube`
+```
+k apply -f minikube_service.yaml
+k get service
+NAME         TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+api-app      NodePort    10.96.37.23   <none>        80:30125/TCP   50m
+client-app   NodePort    10.106.27.1   <none>        80:30405/TCP   50m
+kubernetes   ClusterIP   10.96.0.1     <none>        443/TCP        133m
+```
+6. Get minikube service urls
+```
+minikube service list
+|---------------|------------------------------------|--------------|---------------------------|
+|   NAMESPACE   |                NAME                | TARGET PORT  |            URL            |
+|---------------|------------------------------------|--------------|---------------------------|
+| default       | api-app                            |           80 | http://192.168.49.2:30125 |
+| default       | client-app                         |           80 | http://192.168.49.2:30405 |
+```
+Browse below in browser to validate its working-
+```
+http://192.168.49.2:30405/
+http://192.168.49.2:30125/stats
+```
 
+7. Enable Ingress Addon in minikube and validate
 
-# frontend-backend-sample
+```
+minikube addons enable ingress
+kubectl get pods -n ingress-nginx
+NAME                                        READY   STATUS      RESTARTS    AGE
+ingress-nginx-admission-create-g9g49        0/1     Completed   0          11m
+ingress-nginx-admission-patch-rqp78         0/1     Completed   1          11m
+ingress-nginx-controller-59b45fb494-26npt   1/1     Running     0          11m
+```
+8. Make entry in `/etc/hosts` file
+```
+minikube ip
+192.168.49.2
+cat /etc/hosts
+192.168.49.2    hello-world.info
+```
+8. Apply minikube_ingress.yaml file
+
+```
+k apply -f minikube_ingress.yaml
+k get ingress
+k get ingress
+NAME              CLASS   HOSTS              ADDRESS        PORTS   AGE
+example-ingress   nginx   hello-world.info   192.168.49.2   80      107m
+
+Browse below in browser for client app to validate react client app is running on port 80.
+```
+http://hello-world.info/api/stats
+http://192.168.49.2
+```
+
+9. Stop minikube
+```
+minikube stop
+```
