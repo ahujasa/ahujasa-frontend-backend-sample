@@ -85,10 +85,10 @@ Outputs:
 
 kubernetes_cluster_name = "aks-hello-world"
 resource_group_name = "rg-hello-world"
-
 ```
 7.  Download and install `kubectl` from `https://kubernetes.io/docs/tasks/tools/` and set alias in k for kubectl in bash profile
-Check minikube nodes are ready  
+Check minikube nodes are ready.  
+
 
 8.link kubectl to use AKS cluster
 ```
@@ -132,7 +132,7 @@ az aks show \
   --query addonProfiles.httpApplicationRouting.config.HTTPApplicationRoutingZoneName
  6767832f308847f298ac.southindia.aksapp.io 
 
-Update ingress.yaml line for #host confir as hello.6767832f308847f298ac.southindia.aksapp.io
+Update ingress.yaml line for #host config line 16, as hello.6767832f308847f298ac.southindia.aksapp.io
 
 k apply -f ingress.yaml -w
 Wait for few minutes until ADDRESS field is shown as it can upto 5 minutes
