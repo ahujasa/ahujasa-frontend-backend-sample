@@ -107,9 +107,10 @@ hello-website   <none>   hello.c054786f87e443ccbed7.southindia.aksapp.io   13.71
 Browse below in browser to see ui is loading.
 Browse  below in browser to see rest api backned service is also loading. 
 
+http://13.71.97.67  
+
+http://hello.c054786f87e443ccbed7.southindia.aksapp.io/api/stats  
 ```
-http://13.71.97.67
-http://hello.c054786f87e443ccbed7.southindia.aksapp.io/api/stats
 {"cpu":4.3,"ram":29.9}
 ```
 
@@ -157,7 +158,7 @@ minikube service list
 Browse below in browser to validate its working-
 ```
 http://192.168.49.2:30405/  
-   
+
 http://192.168.49.2:30125/stats
 ```
 
