@@ -31,8 +31,8 @@ In the sys-stats directory, do the following.
    - This create Docker container to reverse proxy client & server over port `80`. `Default 80` in client configuration of default.nginx points to `server` over port 3000. `/api` in default.nginx points to `client` over port 8000.
    So,in nutshell, when we run `docker-compose up --build` command, then it brings up react application over port `http://localhost` and `http://localhost/api/stats` resolves to client flask application. Browse below to validate in browser-
    ```
-      `http://localhost` 
-      `http://localhost/api/stats`
+      http://localhost
+      http://localhost/api/stats
    ```
 
 4. Stop `docker-compose up --build` command to free up port 80.
