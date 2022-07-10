@@ -45,44 +45,67 @@ In the sys-stats directory, do the following.
 ```
 az login
 ```
-4. Export variables in bash profile
+4. Export variables in bash profile and source it.
 ```
+~/.bashrc
 export RESOURCE_GROUP=rg-hello-world
 export CLUSTER_NAME=aks-hello-world
 export LOCATION=southindia
-```
-5. Create resource group  , a placeholder for all resources
-```
-az group create --name=$RESOURCE_GROUP --location=$LOCATION
+. ~/.bashrc
 ```
 
-6. Create AKS cluster
+5. Create Active Directory Service Principal-
 ```
-az aks create \
-    --resource-group $RESOURCE_GROUP \
-    --name $CLUSTER_NAME \
-    --node-count 2 \
-    --enable-addons http_application_routing \
-    --generate-ssh-keys \
-    --node-vm-size Standard_B2s \
-    --network-plugin azure
-   ```
+az ad sp create-for-rbac --skip-assignment
+{
+  "appId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "displayName": "azure-cli-2022-07-09-07-46-05",
+  "name": "http://azure-cli-2022-07-09-07-46-05",
+  "password": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "tenant": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+}
+```
+
+6. Update appID and password in terraform.tfvars file-
+terraform.tfvars
+appId    = "aaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+password = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+aksClusterName = "aks-hello-world"
+resourceGroupName = "rg-hello-world"
+```
+
+6. Create Azure resource groups and AKS cluster- 
+```
+terraform init
+terraform apply --auto-approve
+Apply complete! Resources: 2 added, 0 changed, 2 destroyed.
+
+Outputs:
+
+kubernetes_cluster_name = "aks-hello-world"
+resource_group_name = "rg-hello-world"
+
+```
 7.  Download and install `kubectl` from `https://kubernetes.io/docs/tasks/tools/` and set alias in k for kubectl in bash profile
 Check minikube nodes are ready  
 
 8.link kubectl to use AKS cluster
 ```
-az aks get-credentials --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP
-```
-
-```
+az aks get-credentials --resource-group $(terraform output -raw resource_group_name) --name $(terraform output -raw kubernetes_cluster_name)
+Merged "aks-hello-world" as current context in /home/sauahuja/.kube/config
+k config get-contexts
+CURRENT   NAME                  CLUSTER               AUTHINFO                                             NAMESPACE
+*         aks-hello-world       aks-hello-world       clusterUser_rg-hello-world_aks-hello-world           
 k get nodes
+NAME                              STATUS   ROLES   AGE     VERSION
+aks-default-35476689-vmss000000   Ready    agent   2m13s   v1.22.6
 ```
 
 9. Apply deployment.yaml to deploy api and client pods and run its deployments resources in k8s.
 ```
 k apply -f deployment.yaml
-k get deployments
+Wait for few minutes until all deployments are READY as 1/1.
+k get deploy -w
 NAME              READY   UP-TO-DATE   AVAILABLE   AGE
 api-app           1/1     1            1           72m
 client-app        1/1     1            1           72m
@@ -96,20 +119,33 @@ NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
 api-app      ClusterIP   10.0.241.248   <none>        80/TCP    22m
 client-app   ClusterIP   10.0.73.197    <none>        80/TCP    22m
 ```
-11. Apply ingress.yaml file
+11. Enable http routing in AKS cluster and Apply ingress.yaml file
 
 ```
-k apply -f minikube_ingress.yaml
+az aks enable-addons --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --addons http_application_routing
+
+az aks show \
+  -g $RESOURCE_GROUP \
+  -n $CLUSTER_NAME \
+  -o tsv \
+  --query addonProfiles.httpApplicationRouting.config.HTTPApplicationRoutingZoneName
+ 6767832f308847f298ac.southindia.aksapp.io 
+
+Update ingress.yaml line for #host confir as hello.6767832f308847f298ac.southindia.aksapp.io
+
+k apply -f ingress.yaml -w
+Wait for few minutes until ADDRESS field is shown as it can upto 5 minutes
 k get ingress
-NAME            CLASS    HOSTS                                             ADDRESS       PORTS   AGE
-hello-website   <none>   hello.c054786f87e443ccbed7.southindia.aksapp.io   13.71.97.67   80      12m
+NAME            CLASS    HOSTS                                             ADDRESS           PORTS   AGE
+hello-website   <none>   hello.6767832f308847f298ac.southindia.aksapp.io   104.211.207.186   80      58s
 ```
 Browse below in browser to see ui is loading.
 Browse  below in browser to see rest api backned service is also loading. 
 
-http://13.71.97.67  
+http://104.211.207.186/
 
 http://hello.c054786f87e443ccbed7.southindia.aksapp.io/api/stats  
+
 ```
 {"cpu":4.3,"ram":29.9}
 ```

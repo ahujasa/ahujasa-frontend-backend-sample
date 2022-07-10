@@ -13,7 +13,7 @@ spec:
       port:
         name: http-client
   rules:
-    - host: hello.c054786f87e443ccbed7.southindia.aksapp.io # Which host is allowed to enter the cluster
+    - host: hello.6767832f308847f298ac.southindia.aksapp.io # Which host is allowed to enter the cluster
       http:
         paths:
           - backend: # How the ingress will handle the requests
