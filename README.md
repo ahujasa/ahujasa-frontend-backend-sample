@@ -68,6 +68,7 @@ az ad sp create-for-rbac --skip-assignment
 
 6. Update appID and password in terraform.tfvars file-
 terraform.tfvars
+```
 appId    = "aaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 password = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 aksClusterName = "aks-hello-world"
