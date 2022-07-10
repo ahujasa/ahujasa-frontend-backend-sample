@@ -104,9 +104,9 @@ k get ingress
 NAME            CLASS    HOSTS                                             ADDRESS       PORTS   AGE
 hello-website   <none>   hello.c054786f87e443ccbed7.southindia.aksapp.io   13.71.97.67   80      12m
 ```
+```
 Browse `[http://13.71.97.67](http://13.71.97.67)` in browser to see ui is loading.
 Browse  `[http://hello.c054786f87e443ccbed7.southindia.aksapp.io/api/stats](http://13.71.97.67)` in browser to see rest api backned service is also loading. 
-```
 {"cpu":4.3,"ram":29.9}
 ```
 
