@@ -156,7 +156,8 @@ minikube service list
 ```
 Browse below in browser to validate its working-
 ```
-http://192.168.49.2:30405/
+http://192.168.49.2:30405/  
+   
 http://192.168.49.2:30125/stats
 ```
 
@@ -187,9 +188,10 @@ example-ingress   nginx   hello-world.info   192.168.49.2   80      107m
 
 Browse below in browser for client app to validate react client app is running on port 80.
 ```
-http://hello-world.info/api/stats
+http://hello-world.info/api/stats  
+
 http://192.168.49.2
-```
+
 
 9. Stop minikube
 ```
